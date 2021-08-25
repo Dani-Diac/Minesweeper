@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Minesweeper</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body style="text-align: center">
+    <div class="buttons">
+      <button type="button" id="begginer" value="0" onclick="createGrid(9, 9, 10, id)" style="background-color: lightBlue">Begginer</button>
+      <button type="button" id="intermediate" value="0" onclick="createGrid(16, 16, 40, id)" style="background-color: lightGreen">Intermediate</button>
+      <button type="button" id="expert" value="0" onclick="createGrid(30, 16, 99, id)" style="background-color: lightPink">Expert</button>
+    </div>
+    <div class="statusGame">
+      <output id="numberOfFlags">10</output>
+      <input class="restart" type="button" onclick="document.location.reload(true)" value="😃">
+      <output id="timer">000</output>
+    </div>
+    <div class="grid"></div>
+    <script src="script.js"></script>
+  </body>
+</html>
