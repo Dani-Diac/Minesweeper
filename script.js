@@ -1,51 +1,33 @@
 var timerStatus;
 var seconds = 0;
-var flagsPosition = [];
 var flags = 0;
+var clickedCell = false;
 
-function createGrid(width, height, numberOfBombs, btnId) {
+function createGrid(height, width, numberOfBombs) {
   document.getElementById("numberOfFlags").innerHTML = numberOfBombs;
   const grid = document.getElementsByClassName("grid")[0];
   const table =  Array.from({ length: height + 2 }, () => Array.from({ length: width + 2 }, () => -1));
   const bombsPosition = [];
-  const isWin = null;
-  var clickedCell = 0;
   flags = numberOfBombs;
-  if (width == height) {
-    grid.style.width = "216px";
-    grid.style.height = "216px";
-  }
-  if (width == 16) {
-    grid.style.width = "384px";
-    grid.style.height = "384px";
-  }
-  if (width != height) {
-    grid.style.width = "705px";
-    grid.style.height = "360px";
-  }
   for (let i = 1; i <= height; ++i) {
     for (let j = 1; j <= width; ++j) {
       table[i][j] = 0;
       const cell = document.createElement("div");
-      cell.setAttribute("id", i + "." + j);
-      cell.addEventListener("click", function(e) {
-        checkCell(i, j, width, table, bombsPosition, isWin);
-      })
-      cell.addEventListener("contextmenu", function(e) {
-        if (!setFlag(i, j, table)) {
-          cell.addEventListener("click", function(e) {
-            checkCell(i, j, width, table, bombsPosition, isWin);
-          })
-        }
-      })
+      grid.appendChild(cell);
+      cell.className = "cells";
+      cell.id = i + "." + j;
+      cell.onclick = function() {checkCell(i, j, width, table, bombsPosition)};
+      cell.oncontextmenu = function() {setFlag(i, j, width, table)};
       window.oncontextmenu = (e) => {
         e.preventDefault();
       }
-      grid.appendChild(cell);
     }
+    let row = document.createElement("div");
+    row.className = "clear";
+    grid.appendChild(row);
   }
-  placeBombs(numberOfBombs, width, height, table, bombsPosition);
-  countBombsAround(width, height, table);
+  placeBombs(numberOfBombs, height, width, table, bombsPosition);
+  countBombsAround(height, width, table);
 }
 
 function timer() {
@@ -64,11 +46,10 @@ function stopTimer() {
   clearInterval(timerStatus);
 }
 
-function setFlag(i, j, table) {
+function setFlag(i, j, width, table) {
   if (document.getElementById(i + "." + j).innerHTML != "🚩" && table[i][j] != -1) {
     if (flags > 0) {
       document.getElementById("numberOfFlags").innerHTML = --flags;
-      flagsPosition.push(i + "." + j);
       document.getElementById(i + "." + j).value = table[i][j];
       table[i][j] = "flag";
       document.getElementById(i + "." + j).innerHTML = "🚩";
@@ -76,36 +57,26 @@ function setFlag(i, j, table) {
     }
   } else if (table[i][j] == "flag") {
     document.getElementById("numberOfFlags").innerHTML = ++flags;
-    let index = flagsPosition.indexOf(i + "." + j);
-    flagsPosition.splice(index, 1);
     document.getElementById(i + "." + j).innerHTML = " ";
     table[i][j] = document.getElementById(i + "." + j).value;
     return false;
   }
 }
 
-function placeBombs(numberOfBombs, width, height, table, bombsPosition) {
-  let randomX;
-  let randomY;
-  if (width == height) {
-    randomX = Math.floor(Math.random() * (height - 1 + 1) + 1);
-    randomY = Math.floor(Math.random() * (height - 1 + 1) + 1);
-  }
-  if (width != height) {
-    randomX = Math.floor(Math.random() * (height - 1 + 1) + 1);
-    randomY = Math.floor(Math.random() * (width - 1 + 1) + 1);
-  }
+function placeBombs(numberOfBombs, height, width, table, bombsPosition) {
+  let randomX = Math.floor(Math.random() * (height - 1 + 1) + 1);
+  let randomY = Math.floor(Math.random() * (width - 1 + 1) + 1);
   if(table[randomX][randomY] != "bomb" && numberOfBombs > 0) {
     table[randomX][randomY] = "bomb";
     bombsPosition[numberOfBombs] = randomX + "." + randomY;
     --numberOfBombs;
-    placeBombs(numberOfBombs, width, height, table, bombsPosition);
+    placeBombs(numberOfBombs, height, width, table, bombsPosition);
   } else if (numberOfBombs > 0) {
-      placeBombs(numberOfBombs, width, height, table, bombsPosition);
+    placeBombs(numberOfBombs, height, width, table, bombsPosition);
   }
 }
 
-function countBombsAround(width, height, table) {
+function countBombsAround(height, width, table) {
   for (let i = 1; i <= height; ++i) {
     for (let j = 1; j <= width; ++j) {
       if (table[i][j] == 0) {
@@ -121,54 +92,47 @@ function countBombsAround(width, height, table) {
   }
 }
 
-function checkCell(row, column, width, table, bombsPosition, isWin) {
-  if (seconds == 0) {
+function checkCell(row, column, width, table, bombsPosition) {
+  if (!clickedCell) {
     timerStatus = setInterval(timer, 1000);
+    clickedCell = true;
   }
   if (table[row][column] > 0) {
     document.getElementById(row + "." + column).innerHTML = table[row][column];
     document.getElementById(row + "." + column).style = "background-color: #DCDCDC";
     table[row][column] = -1;
-    if (checkWin(table, width, bombsPosition, isWin)) {
+    if (checkWin(table, width)) {
       document.getElementsByClassName("restart")[0].value = "🤩";
-      stopTimer();
-      endGame(table, bombsPosition);
-      return;
+      endGame(table, width);
     }
   }
   if (table[row][column] == "bomb") {
     document.getElementById(row + "." + column).style = "background-color: red";
     document.getElementById(row + "." + column).innerHTML = "💣";
-    isWin = false;
-    clickedCell = true;
-    stopTimer();
     revealBombs(bombsPosition, row, column, table);
+    endGame(table, width);
   } else if (table[row][column] == 0) {
     revealCells(table, row, column)
   }
 }
 
 function revealCells(table, row, column) {
-  if (row == 0) {
-    ++row;
-  }
-  if (column == 0) {
-    ++column;
-  }
   for (let k = row - 1; k <= row + 1; ++k) {
     for (let p = column - 1; p <= column + 1; ++p) {
-      if (table[k][p] == 0 || table[k][p] == "flag") {
-        document.getElementById(k + "." + p).innerHTML = " ";
-        document.getElementById(k + "." + p).style = "background-color: #DCDCDC";
-        table[k][p] = -1;
-        revealCells(table, k, p);
-      }
       if (table[k][p] > 0) {
         document.getElementById(k + "." + p).innerHTML = table[k][p];
         document.getElementById(k + "." + p).style = "background-color: #DCDCDC";
         table[k][p] = -1;
       }
-
+      if (table[k][p] == 0 || table[k][p] == "flag") {
+        if (table[k][p] == "flag") {
+          document.getElementById("numberOfFlags").innerHTML = ++flags;
+        }
+        document.getElementById(k + "." + p).innerHTML = " ";
+        document.getElementById(k + "." + p).style = "background-color: #DCDCDC";
+        table[k][p] = -1;
+        revealCells(table, k, p);
+      }
     }
   }
 }
@@ -181,37 +145,23 @@ function revealBombs(bombsPosition, row, column, table) {
     }
   }
   document.getElementsByClassName("restart")[0].value = "☠️";
-  endGame(table, bombsPosition);
 }
 
-function checkWin(table, width, bombsPosition, isWin) {
+function checkWin(table, width) {
   for (let i = 1; i < table.length - 1; ++i) {
-    for (let j = 1; j < width - 1; ++j) {
-      if (bombsPosition.includes(i + "." + j)) {
-        ++j;
-        isWin = true;
-      }
+    for (let j = 1; j <= width; ++j) {
       if (table[i][j] > 0) {
-        isWin = false;
-        return isWin;
+        return false;
       }
     }
   }
-  return isWin;
+  return true;
 }
 
-function endGame(table, bombs) {
-  if (bombs.length < 50) {
-    for (let i = 1; i < table.length - 1; ++i) {
-      for (let j = 1; j < table.length - 1; ++j) {
-        table[i][j] = -1;
-      }
-    }
-  } else {
-    for (let i = 1; i < table.length - 1; ++i) {
-      for (let j = 1; j < 30; ++j) {
-        table[i][j] = -1;
-      }
+function endGame(table, width) {
+  for (let i = 1; i < table.length - 1; ++i) {
+    for (let j = 1; j <= width; ++j) {
+      table[i][j] = -1;
     }
   }
   stopTimer();

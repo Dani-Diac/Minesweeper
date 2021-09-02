@@ -1,16 +1,16 @@
-.grid {
-  display: inline-flex;
-  flex-wrap: wrap;
-  margin-top: 2%
+.cells {
+  width: 25px;
+  height: 25px;
+  display: block;
+  float: left;
+  background-color: #A9A9A9;
+  border: 1px solid grey;
 }
 
-.grid div {
-  height: 19px;
-  width: 18px;
-  background-color: #A9A9A9;
-  border: solid grey;
-  padding: 0.1px;
+.clear {
+  clear: both;
 }
+
  .restart {
    margin-top: 1%;
    border: white;
